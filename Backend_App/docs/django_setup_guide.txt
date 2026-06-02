@@ -1,0 +1,152 @@
+========================================
+DJANGO SETUP GUIDE (BEGINNER)
+========================================
+
+1. CHECK PYTHON INSTALLATION
+----------------------------------------
+python --version
+
+
+2. CREATE PROJECT FOLDER
+----------------------------------------
+mkdir my_django_project
+cd my_django_project
+
+
+3. CREATE VIRTUAL ENVIRONMENT
+----------------------------------------
+python -m venv venv
+
+
+ACTIVATE VENV:
+
+Windows:
+venv\Scripts\activate
+
+Mac/Linux:
+source venv/bin/activate
+
+
+4. INSTALL DJANGO
+----------------------------------------
+pip install django
+
+
+VERIFY INSTALL:
+django-admin --version
+
+
+5. CREATE DJANGO PROJECT
+----------------------------------------
+django-admin startproject config .
+
+
+NOTE:
+The dot "." means create project in current folder
+
+
+6. RUN SERVER (LOCAL)
+----------------------------------------
+python manage.py runserver
+
+
+OPEN IN BROWSER:
+http://127.0.0.1:8000/
+
+
+7. CHANGE PORT (OPTIONAL)
+----------------------------------------
+python manage.py runserver 3000
+
+OR
+
+python manage.py runserver 0.0.0.0:8000
+
+
+8. CREATE APP
+----------------------------------------
+python manage.py startapp core
+
+
+PROJECT STRUCTURE:
+core/
+  models.py
+  views.py
+  admin.py
+
+
+9. REGISTER APP
+----------------------------------------
+config/settings.py
+
+INSTALLED_APPS = [
+    ...
+    "core",
+]
+
+
+10. CREATE SIMPLE VIEW
+----------------------------------------
+core/views.py
+
+from django.http import HttpResponse
+
+def home(request):
+    return HttpResponse("Hello Django 🚀")
+
+
+11. CREATE URLS
+----------------------------------------
+core/urls.py
+
+from django.urls import path
+from .views import home
+
+urlpatterns = [
+    path("", home),
+]
+
+
+EDIT MAIN URLS:
+config/urls.py
+
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("core.urls")),
+]
+
+
+12. RUN AGAIN
+----------------------------------------
+python manage.py runserver
+
+
+OPEN:
+http://127.0.0.1:8000/
+
+
+13. ACCESS VIA LOCAL IP (OPTIONAL)
+----------------------------------------
+RUN SERVER:
+python manage.py runserver 0.0.0.0:8000
+
+
+FIND IP:
+ipconfig   (Windows)
+
+
+EXAMPLE IP:
+192.168.1.10:8000
+
+
+UPDATE SETTINGS:
+ALLOWED_HOSTS = ["192.168.1.10", "localhost"]
+(OR FOR DEV ONLY: ALLOWED_HOSTS = ["*"])
+
+
+========================================
+END OF GUIDE
+========================================
