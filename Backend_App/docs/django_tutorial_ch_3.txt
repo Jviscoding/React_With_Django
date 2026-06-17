@@ -1,0 +1,504 @@
+VIEW
+    -> A view is a “type” of web page in your Django application that generally serves a specific function and has a specific template. 
+    * Blog homepage – displays the latest few entries.
+    * Entry “detail” page – permalink page for a single entry.
+    * Year-based archive page – displays all months with entries in the given year.
+    * Month-based archive page – displays all days with entries in the given month.
+    * Day-based archive page – displays all entries in the given day.
+    * Comment action – handles posting comments to a given entry.
+    * In our poll application, we’ll have the following four views:
+    * Question “index” page – displays the latest few questions.
+    * Question “detail” page – displays a question text, with no results but with a form to vote.
+    * Question “results” page – displays results for a particular question.
+    * Vote action – handles voting for a particular choice in a particular question.
+
+    -> In Django, web pages and other content are delivered by views. Each view is represented by a Python function (or method, in the case of class-based views). Django will choose a view by examining the URL that’s requested (to be precise, the part of the URL after the domain name).
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+CREATING MORE VIEWS
+        def detail(request, question_id):
+            return HttpResponse("You're looking at question %s." % question_id)
+
+
+        def results(request, question_id):
+            response = "You're looking at the results of question %s."
+            return HttpResponse(response % question_id)
+
+
+        def vote(request, question_id):
+            return HttpResponse("You're voting on question %s." % question_id)
+
+    -> wire this views into the polls.urls
+
+        from django.urls import path
+        from . import views
+
+        urlpatterns = [
+            # ex: /polls/
+            path("", views.index, name="index"),
+            # ex: /polls/5/
+            path("<int:question_id>/", views.detail, name="detail"),
+            # ex: /polls/5/results/
+            path("<int:question_id>/results/", views.results, name="results"),
+            # ex: /polls/5/vote/
+            path("<int:question_id>/vote/", views.vote, name="vote"),
+        ]
+
+-------------------------------------------------------------------------------------------------------------------------------
+USING SAMPLE INDEX FUNCTION 
+
+    Django ORM: Latest N Records Query
+    Question.objects.order_by("-pub_date")[:5]
+
+------------------------------------------------------------
+WHAT IT DOES
+------------------------------------------------------------
+
+    - Retrieves Question objects from the database
+    - Sorts them by pub_date (newest first)
+    - Limits results to the first 5 items
+
+------------------------------------------------------------
+BREAKDOWN
+------------------------------------------------------------
+
+    1. order_by("-pub_date")
+    - Sorts by pub_date field
+    - "-" means descending order
+    - Newest → oldest
+
+    2. [:5]
+    - Python slicing
+    - Limits result set to 5 records
+    - Applied after sorting
+
+------------------------------------------------------------
+FINAL MEANING
+------------------------------------------------------------
+
+    - “Get the 5 most recent questions”
+
+------------------------------------------------------------
+SQL EQUIVALENT (approximate)
+------------------------------------------------------------
+
+    SELECT *
+    FROM question
+    ORDER BY pub_date DESC
+    LIMIT 5;
+
+------------------------------------------------------------
+KEY IDEA
+------------------------------------------------------------
+
+    - order_by controls sorting
+    - "-" reverses order (descending)
+    - slicing limits results
+    - Common pattern for "latest posts / recent data"
+
+
+TEMPLATE
+-------------------------------------------------------------------------------------------------------------------------------
+Django Templates & Views (Polls App Notes)
+
+------------------------------------------------------------
+TEMPLATES SETUP
+------------------------------------------------------------
+
+    - Django uses the TEMPLATES setting to load and render HTML templates
+    - Default backend: DjangoTemplates
+    - APP_DIRS = True
+    → Django automatically searches inside each app’s "templates" folder
+
+------------------------------------------------------------
+TEMPLATE STRUCTURE (NAMESPACING)
+------------------------------------------------------------
+
+    Correct structure:
+    polls/templates/polls/index.html
+
+    Reason:
+    - Prevents naming conflicts between apps
+    - Django selects the first matching template name it finds
+    - Namespacing ensures uniqueness:
+    app_name/template_name.html
+
+    So this is referenced as:
+    polls/index.html
+
+------------------------------------------------------------
+TEMPLATE FILE (index.html)
+------------------------------------------------------------
+
+    - Uses Django Template Language (DTL)
+
+    Example:
+
+    {% if latest_question_list %}
+        <ul>
+        {% for question in latest_question_list %}
+            <li>
+                <a href="/polls/{{ question.id }}/">
+                    {{ question.question_text }}
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No polls are available.</p>
+    {% endif %}
+
+------------------------------------------------------------
+KEY TEMPLATE CONCEPTS
+------------------------------------------------------------
+
+    - {% if %} → conditionals
+    - {% for %} → loops
+    - {{ variable }} → output variable value
+    - latest_question_list → passed from view context
+
+------------------------------------------------------------
+VIEW (USING loader.get_template)
+------------------------------------------------------------
+
+    from django.http import HttpResponse
+    from django.template import loader
+    from .models import Question
+
+    def index(request):
+        latest_question_list = Question.objects.order_by("-pub_date")[:5]
+        template = loader.get_template("polls/index.html")
+        context = {"latest_question_list": latest_question_list}
+        return HttpResponse(template.render(context, request))
+
+------------------------------------------------------------
+HOW IT WORKS
+------------------------------------------------------------
+
+    1. Query database:
+    latest_question_list = Question.objects.order_by("-pub_date")[:5]
+
+    2. Load template:
+    loader.get_template("polls/index.html")
+
+    3. Pass data into template:
+    context = {...}
+
+    4. Render HTML with data:
+    template.render(context, request)
+
+    5. Return HTTP response
+
+------------------------------------------------------------
+SIMPLER WAY (render shortcut)
+------------------------------------------------------------
+
+    from django.shortcuts import render
+
+    def index(request):
+        latest_question_list = Question.objects.order_by("-pub_date")[:5]
+        context = {"latest_question_list": latest_question_list}
+        return render(request, "polls/index.html", context)
+
+------------------------------------------------------------
+WHY render() IS BETTER
+------------------------------------------------------------
+
+    - Combines loading + rendering + HttpResponse in one step
+    - Cleaner and shorter code
+    - Most commonly used Django pattern
+
+------------------------------------------------------------
+KEY IDEA
+------------------------------------------------------------
+
+    - Templates separate HTML from Python logic
+    - Views pass data (context) into templates
+    - Django renders final HTML dynamically
+    - Namespacing prevents template conflicts
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+PYTHON INJECTION ON HTML FILE
+
+    Django Templates: Simple Explanation (Beginner Notes)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+    - Django templates are just normal HTML files
+    - The only difference: they can display dynamic data from Python
+
+    Think of it as:
+    HTML + small placeholders for Python data
+
+------------------------------------------------------------
+TWO MAIN TEMPLATE SYNTAX RULES
+------------------------------------------------------------
+
+1. {{ }} → DISPLAY DATA
+
+    - Used to output variables from Python (context)
+
+    Example:
+    {{ question.question_text }}
+
+    Meaning:
+    → Replace this with actual value from Python
+
+    Example output:
+    "What's up?"
+
+------------------------------------------------------------
+
+2. {% %} → LOGIC (CONTROL FLOW)
+
+    - Used for logic like:
+    - if conditions
+    - loops
+    - filters (advanced)
+
+    Examples:
+
+    If statement:
+    {% if latest_question_list %}
+
+    Loop:
+    {% for question in latest_question_list %}
+
+    Meaning:
+    → Control what HTML is shown, not just display data
+
+------------------------------------------------------------
+REAL EXAMPLE FLOW
+------------------------------------------------------------
+
+    Python (view):
+    latest_question_list = Question.objects.all()
+
+    Template:
+    {% for question in latest_question_list %}
+        <li>{{ question.question_text }}</li>
+    {% endfor %}
+
+    Result in browser:
+    <li>What's up?</li>
+    <li>Another question</li>
+
+------------------------------------------------------------
+KEY MENTAL MODEL
+------------------------------------------------------------
+
+    - {{ }} = "show value here"
+    - {% %} = "decide what HTML to show"
+    - Everything else = normal HTML
+
+------------------------------------------------------------
+WHY THIS EXISTS
+------------------------------------------------------------
+
+    Without templates:
+    - HTML would be static
+    - You cannot show database data
+    - You would mix Python + HTML (messy)
+
+    With templates:
+    - Python handles logic (views)
+    - HTML handles layout (templates)
+    - Django connects them
+
+------------------------------------------------------------
+IMPORTANT ADDITIONALS
+------------------------------------------------------------
+
+    - Templates DO NOT run Python code
+    → only display data passed from views
+
+    - Only variables passed in "context" are accessible
+
+    - Example context:
+    {
+        "latest_question_list": [...]
+    }
+
+    - If variable does NOT exist:
+    → template shows empty or error (depending on settings)
+
+------------------------------------------------------------
+HOW DJANGO PROCESSES TEMPLATES
+------------------------------------------------------------
+
+    1. View fetches data from database
+    2. View passes data into context dictionary
+    3. Django loads template file
+    4. Django replaces:
+    - {{ variables }} with values
+    - {% logic %} with rendered HTML rules
+    5. Final HTML is sent to browser
+
+------------------------------------------------------------
+KEY TAKEAWAY
+------------------------------------------------------------
+
+    - You are still writing HTML
+    - Django only adds:
+    → dynamic values ({{ }})
+    → simple logic ({% %})
+    - Everything else stays normal HTML
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+RAISING ERROR RESPONSE 404
+
+    from django.http import Http404
+    from django.shortcuts import render
+
+    from .models import Question
+
+
+    # ...
+    def detail(request, question_id):
+        try:
+            question = Question.objects.get(pk=question_id)
+        except Question.DoesNotExist:
+            raise Http404("Question does not exist")
+        return render(request, "polls/detail.html", {"question": question})
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+URL SYSTEM
+
+Django Templates & URL System (Detail View + URL Tag + Namespacing)
+
+------------------------------------------------------------
+DETAIL TEMPLATE (polls/detail.html)
+------------------------------------------------------------
+
+    <h1>{{ question.question_text }}</h1>
+
+    <ul>
+    {% for choice in question.choice_set.all %}
+        <li>{{ choice.choice_text }}</li>
+    {% endfor %}
+    </ul>
+
+------------------------------------------------------------
+DOT LOOKUP RULE (IMPORTANT)
+------------------------------------------------------------
+
+    For {{ question.question_text }}:
+
+    Django tries in order:
+    1. Dictionary lookup (context)
+    2. Attribute lookup (object attribute)
+    3. List-index lookup (if applicable)
+
+    So:
+    - question.question_text → attribute of Question model
+
+------------------------------------------------------------
+METHOD CALLING IN TEMPLATES
+------------------------------------------------------------
+
+    - question.choice_set.all is treated like:
+    question.choice_set.all()
+
+    - Returns iterable (QuerySet of Choice objects)
+
+    Used inside:
+    {% for choice in question.choice_set.all %}
+
+    Meaning:
+    → Loop through all related Choice objects
+
+------------------------------------------------------------
+PROBLEM WITH HARDCODED URLS
+------------------------------------------------------------
+
+    Old way:
+    <li><a href="/polls/{{ question.id }}/">
+
+    Issues:
+    - tightly coupled to URL structure
+    - breaks if URL changes
+    - hard to maintain in large projects
+
+------------------------------------------------------------
+SOLUTION: {% url %} TAG
+------------------------------------------------------------
+
+    Instead of hardcoding:
+
+    <li><a href="{% url 'detail' question.id %}">
+
+    Meaning:
+    - Django finds URL pattern named "detail"
+    - Automatically builds correct URL
+
+------------------------------------------------------------
+HOW IT WORKS (URL CONF)
+------------------------------------------------------------
+
+    urls.py:
+
+    path("<int:question_id>/", views.detail, name="detail")
+
+    So:
+    - name="detail" is the identifier
+    - Django uses it to reverse the URL
+
+    If URL changes:
+
+    path("specifics/<int:question_id>/", views.detail, name="detail")
+
+    → template DOES NOT need changes
+
+------------------------------------------------------------
+NAMESPACING URLS (IMPORTANT FOR REAL PROJECTS)
+------------------------------------------------------------
+
+    Problem:
+    - Multiple apps can have same URL names (detail, index, etc.)
+
+    Solution:
+    - Use app namespaces
+
+    In polls/urls.py:
+
+    app_name = "polls"
+
+    Now URL name becomes:
+    polls:detail
+
+------------------------------------------------------------
+UPDATED TEMPLATE USAGE
+------------------------------------------------------------
+
+    Old:
+    {% url 'detail' question.id %}
+
+    New (namespaced):
+    {% url 'polls:detail' question.id %}
+
+    Meaning:
+    - polls = app namespace
+    - detail = URL name inside that app
+
+------------------------------------------------------------
+KEY IDEAS
+------------------------------------------------------------
+
+    - Templates access data via dot notation
+    - Related objects use:
+    model.related_set.all
+    - Templates DO NOT write Python code
+    - URL reversing avoids hardcoded links
+    - Namespacing prevents conflicts between apps
+
+------------------------------------------------------------
+WHY THIS DESIGN IS POWERFUL
+------------------------------------------------------------
+
+    - Clean separation:
+    Python → logic
+    HTML → presentation
+    - URL changes don’t break templates
+    - Scales well for large Django projects

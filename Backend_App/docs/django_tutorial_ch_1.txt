@@ -1,0 +1,95 @@
+* TO KNOW DJANGO version
+    python -m django --version
+
+    * notes to be taken about python
+        - python <file.py> - calling a py file and treating it as standalone Scripts
+        - python -m <file (without .py)> -> python searches for the module in its import path (sys.path) and runs it as a module
+                                         
+                                         -> runs it as part of the package, so package imports work correctly.
+
+                                         -> this also guarantees that pip belong to that speicifc Python interpreter
+-----------------------------------------------------------------------------------------------------------------------------------
+* CREATING A PROJECT
+    (terminal) django-admin startproject mysite djangotutorial
+        -> This will create a directory djangotutorial with a project called mysite inside.
+
+    * after this, a project will be created structured in this way:
+        djangotutorial/
+        manage.py
+        mysite/
+            __init__.py
+            settings.py
+            urls.py
+            asgi.py
+            wsgi.py
+
+-----------------------------------------------------------------------------------------------------------------------------------
+* (manage.py:) A command-line utility that lets you interact with this Django project in various ways.
+    -> this can always be seen on terminal when running a django project such as:
+        -> python manage.py <command> (e.g runserver)
+
+* (mysite/settings.py:) Settings/configuration for this Django project.
+
+* (mysite/urls.py:) The URL declarations for this Django project; a “table of contents” of your Django-powered site.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+* RUNNING THE SERVER 
+    (terminal) python manage.py runserver
+        -> this will run the server where ip address is located at 127.0.0.0
+        -> custom ip address and port can also be enforced
+            (terminal) python manage.py runserver <ip address> (e.g. 0.0.0.0:8000 or 127.0.0.0:3000)
+
+-----------------------------------------------------------------------------------------------------------------------------------
+* CREATING AN APP FOR THE PROJECT
+    -> each project has an app which which contains urls for custom app project
+    -> one project can has multiple app; it can be created via:
+
+        (terminal) python manage.py startapp polls
+
+    -> this will create project structure
+
+        polls/
+            __init__.py
+            admin.py
+            apps.py
+            migrations/
+                __init__.py
+            models.py
+            tests.py
+            views.py
+
+-----------------------------------------------------------------------------------------------------------------------------------
+* CREATING A VIEW and URLS
+    -> views contains custom command when located via folders in url, this where client queries happened such as http api (PUT, POST, DELETE, GET)
+
+    -> under polls/view.py
+
+            def index(request):
+                return HttpResponse("Hello, world. You're at the polls index.")
+
+    -> URLS contains a list of url's subdirectory where each sub-directory contains views
+
+        from django.urls import path
+
+        from . import views
+
+        urlpatterns = [
+            path("", views.index, name="index"),
+        ]
+
+-----------------------------------------------------------------------------------------------------------------------------------
+* PROJECT URLS
+    -> a project also has urls, this urls contains all the app sub directory (some sort off when a user search, this was first hits)
+    
+        from django.contrib import admin
+        from django.urls import include, path
+
+        urlpatterns = [
+            path("polls/", include("polls.urls")),
+            path("admin/", admin.site.urls),
+        ]
+
+    -> When to use include()
+        You should always use include() when you include other URL patterns. 
+        The only exception is admin.site.urls, which is a pre-built URLconf provided by Django for the default admin site.
+

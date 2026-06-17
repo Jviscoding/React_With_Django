@@ -63,7 +63,9 @@ OR
 python manage.py runserver 0.0.0.0:8000
 
 
-8. CREATE APP
+8. CREATE APP 
+        (a collection of django project)
+        (a project can contain about multiple app)
 ----------------------------------------
 python manage.py startapp core
 

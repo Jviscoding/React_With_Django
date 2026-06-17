@@ -1,0 +1,101 @@
+REST API + HTTP Mental Model (Beginner Notes)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+REST API uses HTTP to communicate between client and backend.
+
+It works using 3 main parts:
+
+1. URL = WHERE (resource location)
+2. HTTP Method = WHAT ACTION
+3. Request Body = WHAT DATA (if needed)
+
+------------------------------------------------------------
+1. URL (RESOURCE / LOCATION)
+------------------------------------------------------------
+
+- URL identifies the resource you want to interact with
+- It is NOT the data itself
+
+Examples:
+  /polls/5/
+  /users/10/
+
+Meaning:
+  → "Which object do you want?"
+
+------------------------------------------------------------
+2. HTTP METHOD (ACTION)
+------------------------------------------------------------
+
+Defines what you want to do with the resource:
+
+- GET    → read data
+- POST   → create data
+- PUT    → replace/update data
+- PATCH  → partial update
+- DELETE → remove data
+
+Example:
+  GET /polls/5/
+  → get poll #5
+
+------------------------------------------------------------
+3. REQUEST BODY (DATA)
+------------------------------------------------------------
+
+- Used when sending data to the server
+- Usually JSON format
+- NOT part of the URL
+
+Example:
+  POST /polls/
+
+  Body:
+  {
+    "question": "What's new?"
+  }
+
+Meaning:
+  → "Create a new poll using this data"
+
+------------------------------------------------------------
+KEY MENTAL MODEL
+------------------------------------------------------------
+
+URL    → WHERE the request goes (resource)
+METHOD → WHAT you want to do
+BODY   → WHAT data you are sending
+
+------------------------------------------------------------
+REAL-LIFE ANALOGY
+------------------------------------------------------------
+
+URL    → house address
+METHOD → action (deliver / update / delete)
+BODY   → package content
+
+------------------------------------------------------------
+EXAMPLE FLOW
+------------------------------------------------------------
+
+POST /polls/
+
+Body:
+{
+  "question": "New poll?"
+}
+
+Meaning:
+→ Send data to /polls/ to create a new poll
+
+------------------------------------------------------------
+KEY TAKEAWAY
+------------------------------------------------------------
+
+- URL identifies the resource
+- HTTP method defines the operation
+- Body carries the data payload
+- Together they form REST API communication

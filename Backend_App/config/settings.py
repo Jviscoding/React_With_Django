@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',
+    
+    # apps config
+    'core.apps.CoreConfig',
     'polls.apps.PollsConfig'
 ]
 

@@ -1,0 +1,124 @@
+Django: Fetching Data in Views (REST-style)
+
+------------------------------------------------------------
+OVERVIEW
+------------------------------------------------------------
+
+In Django (REST-style), data can be received in 3 main ways:
+
+1. URL Path Parameters (route variables)
+2. Query Parameters (GET params)
+3. Request Body (JSON payload)
+
+Each method is used for different purposes.
+
+------------------------------------------------------------
+1. URL PATH PARAMETERS (ROUTE DATA)
+------------------------------------------------------------
+
+Example URL:
+  /polls/5/
+
+URL pattern:
+  path("polls/<int:id>/", views.detail)
+
+Access in view:
+  def detail(request, id):
+      print(id)
+
+Used for:
+- identifying a specific resource
+- required values (must exist)
+
+Example meaning:
+  → "Give me poll with id = 5"
+
+------------------------------------------------------------
+2. QUERY PARAMETERS (FILTER / OPTIONS)
+------------------------------------------------------------
+
+Example URL:
+  /polls/?sort=latest&page=2
+
+Access in view:
+  def index(request):
+      sort = request.GET.get("sort")
+      page = request.GET.get("page")
+
+Used for:
+- filtering
+- sorting
+- pagination
+- optional inputs
+
+Example meaning:
+  → "Give me polls, sorted by latest"
+
+------------------------------------------------------------
+3. REQUEST BODY (JSON PAYLOAD)
+------------------------------------------------------------
+
+Example request:
+  POST /polls/
+  Content-Type: application/json
+
+  {
+    "question": "What's new?"
+  }
+
+Access in view:
+
+  import json
+
+  def create(request):
+      data = json.loads(request.body)
+      question = data.get("question")
+
+Used for:
+- creating data (POST)
+- updating data (PUT/PATCH)
+- sending structured data (JSON)
+
+Important:
+- request.body is raw bytes
+- must be parsed using json.loads()
+
+------------------------------------------------------------
+MODERN DJANGO OPTION (DRF)
+------------------------------------------------------------
+
+If using Django REST Framework:
+
+  request.data
+
+Automatically handles:
+- JSON parsing
+- form-data parsing
+- validation (if serializer used)
+
+------------------------------------------------------------
+COMPARISON TABLE
+------------------------------------------------------------
+
+| Type            | Example URL              | Access Method        | Use Case              |
+|-----------------|--------------------------|----------------------|-----------------------|
+| Path Param      | /polls/5/               | function argument    | specific resource     |
+| Query Param     | /polls/?sort=latest     | request.GET          | filtering / options   |
+| JSON Body       | POST /polls/            | request.body + json  | create/update data    |
+
+------------------------------------------------------------
+KEY IDEA
+------------------------------------------------------------
+
+- Path params → REQUIRED resource identity
+- Query params → OPTIONAL filters/options
+- Body → DATA payload for create/update operations
+
+------------------------------------------------------------
+ONE-LINE SUMMARY
+------------------------------------------------------------
+
+Django receives data in REST style through:
+- URL path (identity)
+- query params (filters)
+- request body (JSON data payload)
