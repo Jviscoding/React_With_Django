@@ -1,0 +1,442 @@
+# Django Testing Notes (Tutorial Summary)
+
+=========================================
+1. What are Automated Tests?
+=========================================
+- Automated tests are routines that verify whether your code behaves as expected.
+- They replace repetitive manual testing.
+- You write the test once, then run it whenever your code changes.
+
+Example:
+Instead of manually opening your website after every change, simply run:
+
+    python manage.py test
+
+-----------------------------------------
+
+=========================================
+2. Why Write Tests?
+=========================================
+
+✔ Saves Time
+- Prevents repetitive manual testing.
+- Finds problems in seconds.
+
+✔ Prevents Bugs
+- Stops old bugs from returning.
+- Ensures future changes don't break existing functionality.
+
+✔ Documents Code Behavior
+- Tests describe how code is expected to behave.
+
+✔ Makes Code More Trustworthy
+- Other developers trust projects that include tests.
+
+✔ Helps Teams
+- Protects teammates from accidentally breaking each other's code.
+
+-----------------------------------------
+
+=========================================
+3. Testing Strategies
+=========================================
+
+A. Test-Driven Development (TDD)
+    Write tests first.
+    Then write code until tests pass.
+
+B. Traditional Approach
+    Write code first.
+    Add tests afterward.
+
+Both approaches are valid.
+
+-----------------------------------------
+
+=========================================
+4. Finding a Bug
+=========================================
+
+Original bug:
+
+Question.was_published_recently()
+
+returned:
+
+    True
+
+even if
+
+    pub_date = 30 days in the future
+
+Example:
+
+    future_question = Question(
+        pub_date=timezone.now() + timedelta(days=30)
+    )
+
+    future_question.was_published_recently()
+
+Output:
+
+    True ❌
+
+Future questions are NOT recent.
+
+-----------------------------------------
+
+=========================================
+5. Writing the First Test
+=========================================
+
+Tests are usually placed in:
+
+    polls/tests.py
+
+Example:
+
+class QuestionModelTests(TestCase):
+
+    def test_was_published_recently_with_future_question(self):
+
+        time = timezone.now() + timedelta(days=30)
+
+        future_question = Question(pub_date=time)
+
+        self.assertIs(
+            future_question.was_published_recently(),
+            False
+        )
+
+Goal:
+Verify that future questions return False.
+
+-----------------------------------------
+
+=========================================
+6. Running Tests
+=========================================
+
+Run all tests:
+
+    python manage.py test
+
+Run only one app:
+
+    python manage.py test polls
+
+Django automatically:
+
+- Finds test classes.
+- Creates a temporary test database.
+- Executes every method starting with "test".
+- Deletes the database afterward.
+
+-----------------------------------------
+
+=========================================
+7. Fixing the Bug
+=========================================
+
+Incorrect:
+
+    return timezone.now() <= self.pub_date + timedelta(days=1)
+
+Correct:
+
+    def was_published_recently(self):
+        now = timezone.now()
+        return (
+            now - timedelta(days=1)
+            <= self.pub_date
+            <= now
+        )
+
+Reason:
+
+A recent question must satisfy BOTH:
+
+✔ Within the last day
+✔ Not in the future
+
+Equivalent logic:
+
+    self.pub_date >= now - 1 day
+
+AND
+
+    self.pub_date <= now
+
+-----------------------------------------
+
+=========================================
+8. Add More Model Tests
+=========================================
+
+Test an old question
+
+Expect:
+
+    False
+
+--------------------
+
+Test a recent question
+
+Expect:
+
+    True
+
+--------------------
+
+Final model tests:
+
+✔ Future question
+✔ Old question
+✔ Recent question
+
+-----------------------------------------
+
+=========================================
+9. Testing Views
+=========================================
+
+Model tests verify logic.
+
+View tests verify what users actually see.
+
+Use Django's test client:
+
+    self.client.get(...)
+
+instead of manually opening a browser.
+
+-----------------------------------------
+
+=========================================
+10. Fixing the Index View
+=========================================
+
+Original:
+
+    Question.objects.order_by("-pub_date")[:5]
+
+Problem:
+Future questions still appeared.
+
+Correct:
+
+    Question.objects.filter(
+        pub_date__lte=timezone.now()
+    ).order_by("-pub_date")[:5]
+
+Meaning:
+
+pub_date__lte
+
+means
+
+    pub_date <= timezone.now()
+
+Only published questions are returned.
+
+-----------------------------------------
+
+=========================================
+11. Helper Function
+=========================================
+
+To reduce duplicate code:
+
+    create_question(question_text, days)
+
+days:
+
+Negative
+    -> Past
+
+Zero
+    -> Today
+
+Positive
+    -> Future
+
+Example:
+
+    create_question("Past", -30)
+
+    create_question("Future", 30)
+
+-----------------------------------------
+
+=========================================
+12. Index View Tests
+=========================================
+
+Test 1
+
+No questions
+
+Expect:
+
+"No polls are available."
+
+--------------------
+
+Test 2
+
+One past question
+
+Expect:
+
+Past question appears.
+
+--------------------
+
+Test 3
+
+One future question
+
+Expect:
+
+No questions displayed.
+
+--------------------
+
+Test 4
+
+Past + Future
+
+Expect:
+
+Only past question shown.
+
+--------------------
+
+Test 5
+
+Two past questions
+
+Expect:
+
+Newest past question first.
+
+-----------------------------------------
+
+=========================================
+13. Testing Detail View
+=========================================
+
+Problem:
+
+Users could access future questions directly using the URL.
+
+Fix:
+
+Override:
+
+    get_queryset()
+
+Return only:
+
+    Question.objects.filter(
+        pub_date__lte=timezone.now()
+    )
+
+-----------------------------------------
+
+=========================================
+14. Detail View Tests
+=========================================
+
+Future question
+
+Expect:
+
+404 Not Found
+
+--------------------
+
+Past question
+
+Expect:
+
+Question text is displayed.
+
+-----------------------------------------
+
+=========================================
+15. Useful Assertions
+=========================================
+
+assertIs()
+
+Checks identity/value.
+
+Example:
+
+    self.assertIs(result, False)
+
+--------------------
+
+assertEqual()
+
+Checks equality.
+
+Example:
+
+    self.assertEqual(response.status_code, 200)
+
+--------------------
+
+assertContains()
+
+Checks if page contains text.
+
+Example:
+
+    self.assertContains(
+        response,
+        "No polls are available."
+    )
+
+--------------------
+
+assertQuerySetEqual()
+
+Checks queryset contents.
+
+-----------------------------------------
+
+=========================================
+16. Good Testing Practices
+=========================================
+
+✔ One TestCase per model/view.
+
+✔ One test method per scenario.
+
+✔ Use descriptive test names.
+
+Examples:
+
+    test_future_question()
+
+    test_old_question()
+
+    test_recent_question()
+
+-----------------------------------------
+
+=========================================
+17. Key Takeaways
+=========================================
+
+- Tests automate verification of your code.
+- They prevent bugs from returning.
+- Django creates a temporary database when testing.
+- Tests belong in tests.py.
+- Test models for business logic.
+- Test views for user-visible behavior.
+- Future polls should never appear until published.
+- A good test suite serves as documentation and makes refactoring safer.
