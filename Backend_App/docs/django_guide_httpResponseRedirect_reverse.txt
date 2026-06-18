@@ -1,0 +1,125 @@
+DJANGO: HttpResponseRedirect + reverse() (Mental Model Note)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+HttpResponseRedirect tells the browser:
+
+→ "Go to another URL instead"
+
+It does NOT directly navigate the user.
+It sends an HTTP response that triggers a new request.
+
+------------------------------------------------------------
+1. BASIC FLOW
+------------------------------------------------------------
+
+Django view returns:
+
+    HttpResponseRedirect("/polls/5/results/")
+
+Browser receives:
+
+    HTTP 302 Found
+    Location: /polls/5/results/
+
+Then browser automatically does:
+
+    GET /polls/5/results/
+
+------------------------------------------------------------
+2. WHAT reverse() DOES
+------------------------------------------------------------
+
+reverse("polls:results", args=(question.id,))
+
+→ Converts named URL into actual path
+
+Example:
+
+    question.id = 5
+
+Result:
+
+    /polls/5/results/
+
+------------------------------------------------------------
+3. FULL EXPRESSION FLOW
+------------------------------------------------------------
+
+return HttpResponseRedirect(
+    reverse("polls:results", args=(question.id,))
+)
+
+Step-by-step:
+
+1. reverse("polls:results", 5)
+        ↓
+   "/polls/5/results/"
+
+2. HttpResponseRedirect(...)
+        ↓
+   HTTP 302 response with Location header
+
+3. Browser follows redirect
+        ↓
+   GET /polls/5/results/
+
+------------------------------------------------------------
+4. IMPORTANT CONCEPT
+------------------------------------------------------------
+
+HttpResponseRedirect does NOT:
+- render a page
+- send data
+- execute server-side navigation
+
+It only:
+→ tells the browser where to go next
+
+------------------------------------------------------------
+5. WHY ONLY PATH IS USED
+
+Redirect URL is usually:
+
+    "/polls/5/results/"
+
+NOT full domain because:
+
+Browser already knows domain:
+    http://example.com
+
+So it appends path automatically.
+
+------------------------------------------------------------
+6. WHY REDIRECT IS USED (PRG PATTERN)
+
+POST request (form submission):
+
+    /vote/
+
+After processing:
+
+    redirect → /results/
+
+Prevents:
+- duplicate form submission on refresh
+- accidental double voting
+
+------------------------------------------------------------
+7. MENTAL MODEL
+
+reverse()
+    → builds URL
+
+HttpResponseRedirect()
+    → sends "go to this URL"
+
+Browser
+    → performs new GET request
+
+------------------------------------------------------------
+ONE-LINE SUMMARY
+
+HttpResponseRedirect sends an HTTP 302 response with a URL (built by reverse), telling the browser to make a new request to that location instead of staying on the current page.

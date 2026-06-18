@@ -1,0 +1,206 @@
+DJANGO ORM + VOTE FLOW (FROM "CAN YOU EXPLAIN THIS PART TO ME?")
+
+------------------------------------------------------------
+1. CORE FUNCTION: vote()
+------------------------------------------------------------
+
+def vote(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST["choice"])
+
+    except (KeyError, Choice.DoesNotExist):
+        return render(request, "polls/detail.html", {
+            "question": question,
+            "error_message": "You didn't select a choice.",
+        })
+
+    else:
+        selected_choice.votes = F("votes") + 1
+        selected_choice.save()
+
+        return HttpResponseRedirect(reverse("polls:results", args=(question.id,)))
+
+------------------------------------------------------------
+2. WHAT THIS FUNCTION DOES (BIG PICTURE)
+------------------------------------------------------------
+
+Flow:
+1. Get Question from URL (question_id)
+2. Get selected Choice from POST request
+3. Validate input (try/except)
+4. Increase vote count safely
+5. Save to DB
+6. Redirect to results page (PRG pattern)
+
+------------------------------------------------------------
+3. KEY LINE: choice selection
+------------------------------------------------------------
+
+selected_choice = question.choice_set.get(pk=request.POST["choice"])
+
+Meaning:
+→ From THIS question, find the choice selected by user
+
+Breakdown:
+- request.POST["choice"] → user selected choice id
+- question.choice_set → all choices belonging to this question
+- .get(pk=...) → pick ONE exact choice
+
+------------------------------------------------------------
+4. WHAT IS choice_set?
+------------------------------------------------------------
+
+Automatic reverse relationship from ForeignKey.
+
+Model:
+Choice has:
+    question = ForeignKey(Question)
+
+So Django creates:
+    question.choice_set
+
+Meaning:
+→ "all choices linked to this question"
+
+Equivalent SQL:
+    SELECT * FROM choice WHERE question_id = ?
+
+------------------------------------------------------------
+5. IMPORTANT RELATIONSHIP IDEA
+------------------------------------------------------------
+
+Forward relation:
+    choice.question → gives parent Question object
+
+Reverse relation:
+    question.choice_set → gives all child Choice objects
+
+------------------------------------------------------------
+6. SQL MENTAL MODEL
+
+question.choice_set.all()
+
+≈
+SELECT * FROM choice
+WHERE question_id = X
+
+choice.question
+
+≈
+SELECT * FROM question
+WHERE id = choice.question_id
+
+------------------------------------------------------------
+7. FILTERING + NARROWING IDEA
+------------------------------------------------------------
+
+This line:
+
+question.choice_set.get(pk=2)
+
+means:
+- start with choices belonging to question
+- then narrow to id = 2
+
+Equivalent SQL:
+SELECT * FROM choice
+WHERE id = 2
+AND question_id = X
+
+------------------------------------------------------------
+8. MULTIPLE CONDITIONS (IMPORTANT INSIGHT)
+------------------------------------------------------------
+
+Django allows multiple WHERE conditions:
+
+Choice.objects.get(id=2, votes=0)
+
+Means:
+WHERE id = 2 AND votes = 0
+
+All filters are combined using AND logic
+
+------------------------------------------------------------
+9. GET vs FILTER
+
+GET:
+- returns ONE object
+- must exist
+- crashes if none or many
+
+FILTER:
+- returns QuerySet (0, 1, or many)
+- safe
+- used for lists
+
+Example:
+question.choice_set.filter(votes__gte=10)
+
+------------------------------------------------------------
+10. SAFETY IN VOTING LOGIC
+
+Why not:
+Choice.objects.get(pk=...)
+
+Because:
+→ could access choice from another question
+
+Instead:
+question.choice_set.get(pk=...)
+
+→ ensures choice belongs to THIS question
+
+------------------------------------------------------------
+11. F() EXPRESSION (IMPORTANT)
+
+selected_choice.votes = F("votes") + 1
+
+Meaning:
+→ increment directly in DB
+
+Why?
+Prevents race condition:
+- two users vote at same time
+- avoids lost updates
+
+------------------------------------------------------------
+12. REDIRECT (PRG PATTERN)
+
+return HttpResponseRedirect(...)
+
+Purpose:
+- prevents duplicate form submission on refresh
+- enforces Post/Redirect/Get pattern
+
+Flow:
+POST → save → redirect → GET results
+
+------------------------------------------------------------
+13. FINAL MENTAL MODEL
+
+URL gives question_id
+        ↓
+get_object_or_404 retrieves Question
+        ↓
+POST gives choice id
+        ↓
+choice_set limits scope to this question
+        ↓
+get() selects exact choice
+        ↓
+F() safely increments votes
+        ↓
+save() updates DB
+        ↓
+redirect prevents resubmission
+
+------------------------------------------------------------
+KEY TAKEAWAY
+
+Django ORM is just:
+→ Python-friendly way of building SQL queries
+→ ForeignKey creates automatic navigation (choice_set, .question)
+→ get/filter = SQL WHERE logic
+→ relationships = JOIN concept (conceptually)

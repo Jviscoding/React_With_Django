@@ -1,0 +1,7 @@
+polls has two table
+    1. Question -> column - id, question_text_pub date
+    2. Choice  -> column - question(linked to the Question.id), choice_text, votes
+
+
+Question has multiple choices that the user can choice to, every time a user choose a question,
+a choices will appear and everytime user choose on choices, selected choice's vote will increment
