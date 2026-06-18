@@ -1,0 +1,232 @@
+Git Branching & Merging Cheat Sheet (Beginner Notes)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+Git branches let you work on different versions of your project
+without affecting the main code.
+
+There are two main types:
+
+1. Local branches → on your computer
+2. Remote branches → on GitHub / server
+
+------------------------------------------------------------
+1. LOCAL BRANCHES
+------------------------------------------------------------
+
+Command:
+  git branch
+
+Meaning:
+  Shows branches stored on your local machine
+
+Example:
+  main
+  develop
+  feature/login
+
+Key idea:
+  → These exist only on your computer unless pushed
+
+------------------------------------------------------------
+2. REMOTE BRANCHES
+------------------------------------------------------------
+
+Command:
+  git branch -r
+
+Meaning:
+  Shows branches stored on remote (e.g. GitHub)
+
+Example:
+  origin/main
+  origin/develop
+  origin/feature/login
+
+Key idea:
+  → These are branches that have been pushed
+
+IMPORTANT:
+  A branch only appears here after you push it
+
+------------------------------------------------------------
+3. ALL BRANCHES
+------------------------------------------------------------
+
+Command:
+  git branch -a
+
+Meaning:
+  Shows both local and remote branches together
+
+------------------------------------------------------------
+KEY MENTAL MODEL
+------------------------------------------------------------
+
+git branch   → branches on your computer
+git branch -r → branches on GitHub (remote)
+git branch -a → both combined
+
+------------------------------------------------------------
+4. SWITCHING BRANCHES (MODERN vs OLD)
+------------------------------------------------------------
+
+MODERN (RECOMMENDED)
+
+git switch main
+git switch feature/login
+
+git switch -c new-branch
+
+OLD (STILL WORKS)
+
+git checkout main
+git checkout feature/login
+
+git checkout -b new-branch
+
+------------------------------------------------------------
+5. PUSHING A BRANCH
+------------------------------------------------------------
+
+git push -u origin feature/login
+
+→ Uploads branch to GitHub
+→ Enables tracking with remote
+
+------------------------------------------------------------
+6. MERGING BRANCHES
+------------------------------------------------------------
+
+git switch main
+git merge feature/login
+
+MEANING:
+→ Bring feature/login into main
+
+RULE:
+The branch you are ON is always the destination
+
+Example:
+git switch A
+git merge B
+→ B goes INTO A
+
+------------------------------------------------------------
+7. MERGE BEHAVIOR
+------------------------------------------------------------
+
+NO CONFLICTS:
+→ Auto merge
+
+CONFLICTS:
+→ Manual fix required
+
+Fix:
+git add .
+git commit
+
+------------------------------------------------------------
+KEY TAKEAWAY
+------------------------------------------------------------
+
+Local  → your machine
+Remote → GitHub
+switch → change branch
+push   → upload branch
+merge  → combine branches (into current one)
+
+Git Ignore + Tracked Files (Cache Issue Fix) (Beginner Notes)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+.gitignore ONLY works for files that are NOT tracked yet.
+
+If a file was already committed before:
+→ Git will continue tracking it
+→ Even if you add it to .gitignore
+
+So:
+.gitignore does NOT stop tracking existing files
+
+------------------------------------------------------------
+WHY THIS HAPPENS
+------------------------------------------------------------
+
+Git has 3 areas:
+
+1. Working directory → your files
+2. Staging area (index) → what Git tracks
+3. Repository → committed history
+
+If a file is already in the index:
+→ .gitignore has no effect on it
+
+------------------------------------------------------------
+SOLUTION: REMOVE FROM GIT CACHE (STOP TRACKING)
+
+------------------------------------------------------------
+
+Command:
+  git rm --cached <file>
+
+Meaning:
+  → Remove file from Git tracking (index)
+  → Keep file locally on your computer
+
+------------------------------------------------------------
+FOR SINGLE FILE
+------------------------------------------------------------
+
+git rm --cached config.env
+git add .
+git commit -m "Stop tracking config.env"
+
+------------------------------------------------------------
+FOR FOLDERS (COMMON CASES)
+------------------------------------------------------------
+
+git rm -r --cached node_modules/
+git rm -r --cached backend-app/.env
+
+Then:
+
+git add .
+git commit -m "Fix gitignore for tracked files"
+
+------------------------------------------------------------
+WHAT THIS DOES
+------------------------------------------------------------
+
+Before:
+  Git tracks file + ignores .gitignore rule
+
+After:
+  File removed from index
+  File stays locally
+  File becomes ignored in future commits
+
+------------------------------------------------------------
+IMPORTANT BEHAVIOR
+------------------------------------------------------------
+
+✔ File stays on your computer  
+✔ File will NOT be tracked anymore  
+✔ File will be removed from GitHub after commit  
+
+❗ BUT:
+Old commits still contain the file (history remains)
+
+------------------------------------------------------------
+KEY TAKEAWAY
+------------------------------------------------------------
+
+.gitignore:
+  → Prevents NEW files from being tracked
+
+git rm --cached:
+  → Removes ALREADY tracked files from Git
