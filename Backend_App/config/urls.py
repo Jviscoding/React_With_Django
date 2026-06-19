@@ -18,10 +18,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from config import settings
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("polls/", include("polls.urls")),    
     path("", include("core.urls")),
-    path("sample/", include("core.projects.brands.urls"))
-
+    path("sample/", include("core.projects.brands.urls")),
 ]
+
+if settings.DEBUG and not settings.TESTING:
+    from debug_toolbar.toolbar import debug_toolbar_urls
+    urlpatterns += debug_toolbar_urls()

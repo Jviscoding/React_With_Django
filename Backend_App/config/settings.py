@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
 
 
 # Quick-start development settings - unsuitable for production
@@ -40,7 +43,8 @@ INSTALLED_APPS = [
     
     # apps config
     'core.apps.CoreConfig',
-    'polls.apps.PollsConfig'
+    "polls.apps.PollsConfig",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -52,6 +56,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+if not TESTING:
+    
+    INSTALLED_APPS += [
+        "debug_toolbar"]
+    
+    MIDDLEWARE.insert(
+        0,
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    )
 
 ROOT_URLCONF = 'config.urls'
 
@@ -82,6 +97,10 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
 
 # Password validation
