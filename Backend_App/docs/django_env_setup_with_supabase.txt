@@ -1,0 +1,231 @@
+
+============================================================
+DJANGO ENVIRONMENT VARIABLES (.env) SETUP
+============================================================
+
+------------------------------------------------------------
+WHY USE A .env FILE?
+------------------------------------------------------------
+
+A .env file stores configuration values separately from the source code.
+
+Examples:
+- Database credentials
+- API keys
+- Secret keys
+- Email credentials
+
+Benefits:
+✔ Keeps sensitive information out of source code
+✔ Easier to switch between development and production
+✔ Prevents accidentally committing secrets to Git
+✔ Allows multiple environments to use different configurations
+
+------------------------------------------------------------
+1. INSTALL PYTHON-DOTENV
+------------------------------------------------------------
+
+Install inside the project's virtual environment:
+
+python -m pip install python-dotenv
+
+Verify installation:
+
+python -m pip show python-dotenv
+
+------------------------------------------------------------
+2. CREATE .env FILE
+------------------------------------------------------------
+
+Place the .env file in the project root
+(the same directory as manage.py).
+
+Example structure:
+
+Project/
+│
+├── manage.py
+├── .env
+├── config/
+│   └── settings.py
+└── app/
+
+------------------------------------------------------------
+3. ADD VARIABLES
+------------------------------------------------------------
+
+Example:
+
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=my_database_password
+DB_HOST=db.xxxxxxxxx.supabase.co
+DB_PORT=5432
+
+SECRET_KEY=your-secret-key
+DEBUG=True
+
+------------------------------------------------------------
+4. LOAD THE .env FILE
+------------------------------------------------------------
+
+At the top of settings.py:
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+This loads all variables from the .env file into Python's
+environment variables.
+
+------------------------------------------------------------
+5. ACCESS VARIABLES
+------------------------------------------------------------
+
+Retrieve values using:
+
+os.getenv("VARIABLE_NAME")
+
+Example:
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
+        "OPTIONS": {
+            "sslmode": "require",
+        },
+    }
+}
+
+------------------------------------------------------------
+6. VERIFY VARIABLES
+------------------------------------------------------------
+
+Temporary debugging:
+
+print(os.getenv("DB_NAME"))
+print(os.getenv("DB_HOST"))
+
+If they print None:
+
+- .env not found
+- load_dotenv() missing
+- Variable name misspelled
+- .env in wrong directory
+
+------------------------------------------------------------
+7. TEST DATABASE CONNECTION
+------------------------------------------------------------
+
+Run:
+
+python manage.py migrate
+
+If successful:
+
+✔ Django connects to the database.
+✔ Migration tables are created.
+✔ Future models can be migrated normally.
+
+------------------------------------------------------------
+SUPABASE SETUP
+------------------------------------------------------------
+
+Required values:
+
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=<Database Password>
+DB_HOST=db.xxxxxxxxx.supabase.co
+DB_PORT=5432
+
+IMPORTANT:
+
+DB_PASSWORD is the PostgreSQL database password.
+
+It is NOT:
+
+✖ Supabase anon key
+✖ Service role key
+✖ Project API key
+
+------------------------------------------------------------
+COMMON MISTAKES
+------------------------------------------------------------
+
+❌ Installing python-dotenv globally instead of inside the venv.
+
+Fix:
+
+python -m pip install python-dotenv
+
+------------------------------------------------------------
+
+❌ Forgetting to call:
+
+load_dotenv()
+
+Result:
+
+os.getenv(...) returns None.
+
+------------------------------------------------------------
+
+❌ Placing .env inside config/
+
+Correct:
+
+Project/
+│
+├── manage.py
+├── .env
+
+------------------------------------------------------------
+
+❌ Committing .env to GitHub.
+
+Always add to .gitignore:
+
+.env
+
+------------------------------------------------------------
+MENTAL MODEL
+------------------------------------------------------------
+
+.env
+   │
+   ▼
+load_dotenv()
+   │
+   ▼
+Environment Variables
+   │
+   ▼
+os.getenv()
+   │
+   ▼
+settings.py
+   │
+   ▼
+Django Configuration
+
+------------------------------------------------------------
+KEY TAKEAWAYS
+------------------------------------------------------------
+
+✔ Store sensitive configuration inside .env.
+✔ Use python-dotenv to load variables.
+✔ Access values using os.getenv().
+✔ Keep .env beside manage.py.
+✔ Never commit .env to GitHub.
+✔ Supabase uses PostgreSQL credentials, not API keys, for Django database connections.
+
+============================================================
+END OF NOTES
+============================================================
