@@ -1,0 +1,373 @@
+Writing Reusable Django Apps (Advanced Tutorial Notes)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+A Django app can be turned into a reusable Python package.
+
+This allows you to:
+→ Share it with others  
+→ Install it in new projects  
+→ Reuse your own code like a library  
+
+Example:
+→ Turning `polls` app into `django-polls` package
+
+------------------------------------------------------------
+1. WHY REUSABILITY MATTERS
+------------------------------------------------------------
+
+Many web apps solve repeated problems.
+
+Instead of rewriting:
+→ You reuse existing apps/packages
+
+Python philosophy:
+→ Reusability is a core principle
+
+Tools:
+- PyPI (Python Package Index)
+- Django Packages
+
+Django itself is also a package.
+
+------------------------------------------------------------
+2. PACKAGE vs DJANGO APP
+------------------------------------------------------------
+
+Python Package:
+→ Folder of modules
+→ Can be imported in Python
+
+Django App:
+→ A Python package built for Django
+→ Contains models, views, urls, templates, tests
+
+REQUIREMENT:
+→ Must include __init__.py
+
+------------------------------------------------------------
+3. PROJECT RESTRUCTURE
+------------------------------------------------------------
+
+Before:
+  djangotutorial/
+    manage.py
+    mysite/
+    polls/
+
+After:
+  django-polls/
+    django_polls/
+
+Goal:
+→ Move app out of project
+→ Make it reusable
+
+------------------------------------------------------------
+4. APP RENAMING
+------------------------------------------------------------
+
+Rename:
+  polls → django_polls
+
+Reason:
+→ Python naming convention
+→ Required for packaging/importing
+
+------------------------------------------------------------
+5. APPCONFIG CHANGES
+------------------------------------------------------------
+
+File:
+  django_polls/apps.py
+
+Key settings: (add the following on the apps.py)
+
+name = "django_polls"
+label = "polls"
+default_auto_field = "django.db.models.BigAutoField"
+
+example: 
+    from django.apps import AppConfig
+
+    class PollsConfig(AppConfig):
+        default_auto_field = "django.db.models.BigAutoField"
+        name = "django_polls"
+        label = "polls"
+
+------------------------------------------------------------
+6. REQUIRED PACKAGING FILES
+------------------------------------------------------------
+
+------------------------------------------------------------
+README.rst
+------------------------------------------------------------
+
+→ Explains what the package does
+→ Includes install + usage steps
+
+example file django-polls/README.rst
+    ============
+    django-polls
+    ============
+
+    django-polls is a Django app to conduct web-based polls. For each
+    question, visitors can choose between a fixed number of answers.
+
+    Detailed documentation is in the "docs" directory.
+
+    Quick start
+    -----------
+
+    1. Add "polls" to your INSTALLED_APPS setting like this::
+
+        INSTALLED_APPS = [
+            ...,
+            "django_polls",
+        ]
+
+    2. Include the polls URLconf in your project urls.py like this::
+
+        path("polls/", include("django_polls.urls")),
+
+    3. Run ``python manage.py migrate`` to create the models.
+
+    4. Start the development server and visit the admin to create a poll.
+
+    5. Visit the ``/polls/`` URL to participate in the poll.
+
+------------------------------------------------------------
+LICENSE
+------------------------------------------------------------
+
+→ Defines legal usage rights
+→ Required for public sharing
+
+------------------------------------------------------------
+pyproject.toml
+------------------------------------------------------------
+
+-> create a file named pyproject.toml inside folder django-polls where app folder is included in our case (django_polls) folder
+
+→ Defines build configuration
+
+Includes:
+- package name
+- version
+- dependencies
+- Python version requirement
+- metadata (author, description)
+
+example: 
+        [build-system]
+        requires = ["setuptools>=77.0.3"]
+        build-backend = "setuptools.build_meta"
+
+        [project]
+        name = "django-polls"
+        version = "0.1"
+        dependencies = [
+            "django>=5",  # Replace "X.Y" as appropriate
+                          # add django version to avoid static folder not included 
+        ]
+        description = "A Django app to conduct web-based polls."
+        readme = "README.rst"
+        license = "BSD-3-Clause"
+        requires-python = ">= 3.12"
+        authors = [
+            {name = "Your Name", email = "yourname@example.com"},
+        ]
+        classifiers = [
+            "Environment :: Web Environment",
+            "Framework :: Django",
+            "Framework :: Django :: X.Y",  # Replace "X.Y" as appropriate
+                                            # add django version to avoid static folder not being included from MANIFEST.in
+            "Intended Audience :: Developers",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3 :: Only",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
+            "Programming Language :: Python :: 3.14",
+            "Topic :: Internet :: WWW/HTTP",
+            "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+        ]
+
+        [project.urls]
+        Homepage = "https://www.example.com/"
+
+------------------------------------------------------------
+MANIFEST.in
+------------------------------------------------------------
+-> Many common files and Python modules and packages are included in the package by default. 
+-> To include additional files, we’ll need to create a MANIFEST.in file.
+-> Includes extra files in build
+-> create a file named MANIFEST.in and place inside django-polls
+-> you might encouter a bug where folder are not included on builds see attached code on pyproject.toml 
+Used for:
+- templates/
+- static files/
+
+Without it:
+→ These files may be missing in package
+
+example:    
+    recursive-include django_polls/static *
+    recursive-include django_polls/templates *
+
+------------------------------------------------------------
+7. BUILDING THE PACKAGE
+------------------------------------------------------------
+
+Install build tool:
+
+  python -m pip install build
+
+Build package:
+
+  python -m build
+
+Output:
+
+dist/
+  django_polls-0.1.tar.gz
+  django_polls-0.1-py3-none-any.whl
+
+------------------------------------------------------------
+8. INSTALLING YOUR PACKAGE
+------------------------------------------------------------
+
+Install from dist:
+
+  pip install django-polls/dist/django_polls-0.1.tar.gz
+
+or:
+
+  pip install django-polls/dist/django_polls-0.1-py3-none-any.whl
+
+Update Django:
+
+INSTALLED_APPS:
+  "django_polls.apps.PollsConfig"
+
+urls.py:
+  include("django_polls.urls")
+
+------------------------------------------------------------
+9. WHAT CHANGES AFTER PACKAGING
+------------------------------------------------------------
+
+Before:
+→ App is inside Django project
+
+After:
+→ App becomes installable Python package
+
+Result:
+✔ Reusable across projects  
+✔ Shareable with others  
+✔ Works like third-party library  
+
+------------------------------------------------------------
+10. VIRTUAL ENVIRONMENT (IMPORTANT)
+
+Problem:
+→ Installing globally can cause conflicts
+
+Solution:
+→ Use venv
+
+Benefits:
+✔ Isolated dependencies  
+✔ Safe version control  
+✔ Multiple projects supported  
+
+------------------------------------------------------------
+KEY TAKEAWAY
+------------------------------------------------------------
+
+- Django apps can become Python packages
+- Requires restructuring + metadata files
+- build creates dist/ (wheel + tar.gz)
+- pip installs packaged output
+- venv is best practice for real projects
+
+
+----------------------------------------------------------------------------------------------------------------------------
+you might encouter this bug
+
+Django Reusable App Packaging Bug Notes (MANIFEST / Templates Issue)
+------------------------------------------------------------
+
+PROBLEM
+------------------------------------------------------------
+TemplateDoesNotExist even though templates exist in source code.
+
+CAUSE
+------------------------------------------------------------
+1. Using placeholder dependency:
+   "django>=X.Y"  ❌ invalid PEP 508
+
+2. setuptools NOT including templates/static in wheel
+
+3. Old build installed in venv (stale package)
+
+4. Confusion between:
+   - egg-info (shows files in source)
+   - wheel (actual installed package content)
+
+------------------------------------------------------------
+SYMPTOMS
+------------------------------------------------------------
+- TemplateExists in source tree or egg-info
+- BUT NOT inside site-packages after install
+- Django throws:
+  TemplateDoesNotExist: polls/index.html
+
+------------------------------------------------------------
+ROOT FIXES
+------------------------------------------------------------
+
+1. Fix pyproject.toml
+   - Replace:
+     "django>=X.Y" ❌
+   - With:
+     "Django>=5.0" ✔
+
+2. Add setuptools config:
+   [tool.setuptools]
+   include-package-data = true
+
+   [tool.setuptools.packages.find]
+   where = ["."]
+
+3. Ensure MANIFEST.in exists at ROOT:
+   recursive-include django_polls/templates *
+   recursive-include django_polls/static *
+
+------------------------------------------------------------
+BUILD PROCESS RULE
+------------------------------------------------------------
+Any change in:
+- templates
+- static files
+- MANIFEST.in
+- pyproject.toml
+
+MUST be followed by:
+1. delete dist/build/egg-info
+2. python -m build
+3. pip install --force-reinstall dist/*.whl
+4. restart Django server
+
+------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------
+- egg-info = file listing (NOT final package)
+- wheel = actual installed package
+- Django only reads site-packages
+- placeholders like X.Y will break build instantly
+------------------------------------------------------------
