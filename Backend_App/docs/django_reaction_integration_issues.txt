@@ -1,0 +1,169 @@
+
+============================================================
+[Django + React Integration Issue - CORS BLOCK]
+============================================================
+
+PROJECT SETUP:
+- Backend: Django (127.0.0.1:8000)
+- Frontend: React (localhost:5173)
+- API endpoint: /task_manager/?user_id=1
+
+------------------------------------------------------------
+PROBLEM
+------------------------------------------------------------
+
+React fetch request failed with:
+
+- CORS policy blocked request
+- ERR_FAILED in browser
+- Preflight OPTIONS request rejected
+- Network request never reached Django view in some cases
+
+------------------------------------------------------------
+ROOT CAUSE
+------------------------------------------------------------
+
+1. Missing CORS configuration in Django
+2. Browser sends OPTIONS preflight request (because cross-origin)
+3. Django does NOT respond with proper CORS headers
+4. Browser blocks request before API execution
+
+IMPORTANT:
+- Not a backend logic issue
+- Not a serializer issue
+- Not a React bug
+- It is a browser security policy (CORS)
+
+------------------------------------------------------------
+INSTALLATION REQUIRED
+------------------------------------------------------------
+
+Step 1: Install CORS package
+
+pip install django-cors-headers
+
+------------------------------------------------------------
+BACKEND CONFIGURATION (settings.py)
+------------------------------------------------------------
+
+1. Add to INSTALLED_APPS:
+
+INSTALLED_APPS = [
+    ...
+    'rest_framework',
+    'corsheaders',
+]
+
+------------------------------------------------------------
+
+2. Add middleware (IMPORTANT: must be FIRST):
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    ...
+]
+
+------------------------------------------------------------
+
+3. Allow frontend origin:
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+OR (development only):
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+------------------------------------------------------------
+FRONTEND REQUEST (React)
+------------------------------------------------------------
+
+Correct fetch implementation:
+
+const getTasks = async () => {
+    const res = await fetch(
+        "http://127.0.0.1:8000/task_manager/?user_id=1"
+    );
+
+    const data = await res.json();
+    return data;
+};
+
+IMPORTANT NOTES:
+- DO NOT add "Content-Type" header in GET requests
+- Adding headers triggers preflight OPTIONS request
+- Preflight may fail if CORS is not fully configured
+
+------------------------------------------------------------
+DJANGO URL CONFIGURATION
+------------------------------------------------------------
+
+Project urls:
+
+path("task_manager/", include("core.urls"))
+
+App urls:
+
+path("", UserView.as_view(), name="task_list")
+
+IMPORTANT:
+- MUST include trailing slash (/task_manager/)
+- Missing slash causes redirect
+- Redirect breaks CORS preflight requests
+
+------------------------------------------------------------
+DEBUGGING SYMPTOMS
+------------------------------------------------------------
+
+Observed errors:
+
+- Access to fetch blocked by CORS policy
+- Response to preflight request doesn't pass access control check
+- Redirect is not allowed for preflight request
+- net::ERR_FAILED
+
+------------------------------------------------------------
+FIX SUMMARY
+------------------------------------------------------------
+
+✔ Installed django-cors-headers
+✔ Added corsheaders to INSTALLED_APPS
+✔ Added CorsMiddleware at top of middleware stack
+✔ Allowed frontend origin (localhost:5173)
+✔ Fixed trailing slash in endpoint
+✔ Removed unnecessary headers in GET requests
+
+------------------------------------------------------------
+EXPECTED RESULT AFTER FIX
+------------------------------------------------------------
+
+Browser Network tab:
+
+OPTIONS /task_manager/
+GET /task_manager/?user_id=1
+
+Response:
+
+{
+    "user": {...},
+    "tasks": [...]
+}
+
+------------------------------------------------------------
+KEY INSIGHT
+------------------------------------------------------------
+
+CORS issues are NOT API failures.
+
+They are:
+→ Browser security enforcement layer
+→ Happens before Django view execution
+→ Triggered by cross-origin requests
+
+============================================================
+END LOG
+============================================================

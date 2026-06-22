@@ -6,96 +6,343 @@ CORE IDEA
 
 REST API uses HTTP to communicate between client and backend.
 
-It works using 3 main parts:
+Every HTTP request consists of three main parts:
 
-1. URL = WHERE (resource location)
-2. HTTP Method = WHAT ACTION
-3. Request Body = WHAT DATA (if needed)
+1. URL    = WHERE (resource location)
+2. METHOD = WHAT ACTION
+3. BODY   = WHAT DATA (if needed)
+
+On the Django side, all of these are available through the
+request object.
 
 ------------------------------------------------------------
 1. URL (RESOURCE / LOCATION)
 ------------------------------------------------------------
 
-- URL identifies the resource you want to interact with
-- It is NOT the data itself
+- URL identifies the resource you want to interact with.
+- It is NOT the data itself.
 
 Examples:
-  /polls/5/
-  /users/10/
+
+    /polls/5/
+    /users/10/
 
 Meaning:
-  → "Which object do you want?"
+
+    → "Which object do you want?"
+
+Example URL:
+
+    GET /products/5/
+
+Django URL:
+
+    path("products/<int:pk>/", ProductDetailAPIView.as_view())
+
+Python:
+
+    def get(self, request, pk):
+        print(pk)          # 5
+
+Notice:
+The value comes from the URL pattern and is passed as a
+function parameter.
 
 ------------------------------------------------------------
 2. HTTP METHOD (ACTION)
 ------------------------------------------------------------
 
-Defines what you want to do with the resource:
+Defines what operation should happen.
 
-- GET    → read data
-- POST   → create data
-- PUT    → replace/update data
-- PATCH  → partial update
-- DELETE → remove data
+GET     → Read
+POST    → Create
+PUT     → Replace/Update
+PATCH   → Partial Update
+DELETE  → Delete
 
 Example:
-  GET /polls/5/
-  → get poll #5
+
+    GET /products/5/
+
+Meaning:
+
+    → Read product #5
+
+Python:
+
+    def get(self, request, pk):
+        ...
 
 ------------------------------------------------------------
 3. REQUEST BODY (DATA)
 ------------------------------------------------------------
 
-- Used when sending data to the server
-- Usually JSON format
-- NOT part of the URL
+The Body contains the data being sent to the server.
+
+Usually JSON.
 
 Example:
-  POST /polls/
 
-  Body:
-  {
-    "question": "What's new?"
-  }
+POST /products/
+
+Body
+
+{
+    "name": "Laptop",
+    "price": 50000
+}
 
 Meaning:
-  → "Create a new poll using this data"
+
+→ Create a new product using this data.
+
+Python (DRF):
+
+    def post(self, request):
+        print(request.data)
+
+Output:
+
+{
+    "name": "Laptop",
+    "price": 50000
+}
 
 ------------------------------------------------------------
-KEY MENTAL MODEL
+HOW TO ACCESS DATA IN DJANGO REST FRAMEWORK
 ------------------------------------------------------------
 
-URL    → WHERE the request goes (resource)
-METHOD → WHAT you want to do
-BODY   → WHAT data you are sending
+GET Request
+
+URL:
+
+    GET /products/?category=electronics
+
+Python:
+
+    def get(self, request):
+        print(request.query_params)
+        print(request.query_params.get("category"))
+
+Output:
+
+    electronics
+
+Use:
+
+    request.query_params
+
+or
+
+    request.GET
+
+for query parameters.
+
+------------------------------------------------------------
+
+POST Request
+
+Body:
+
+{
+    "name": "Mouse",
+    "price": 500
+}
+
+Python:
+
+    def post(self, request):
+        print(request.data)
+
+Output:
+
+{
+    "name": "Mouse",
+    "price": 500
+}
+
+------------------------------------------------------------
+
+PUT Request
+
+URL:
+
+    PUT /products/3/
+
+Body:
+
+{
+    "name": "Gaming Mouse",
+    "price": 700
+}
+
+Python:
+
+    def put(self, request, pk):
+        print(pk)
+        print(request.data)
+
+Output:
+
+    3
+
+{
+    "name": "Gaming Mouse",
+    "price": 700
+}
+
+------------------------------------------------------------
+
+PATCH Request
+
+URL:
+
+    PATCH /products/3/
+
+Body:
+
+{
+    "price": 800
+}
+
+Python:
+
+    def patch(self, request, pk):
+        print(pk)
+        print(request.data)
+
+Output:
+
+    3
+
+{
+    "price": 800
+}
+
+------------------------------------------------------------
+
+DELETE Request
+
+URL:
+
+    DELETE /products/3/
+
+Python:
+
+    def delete(self, request, pk):
+        print(pk)
+
+Output:
+
+    3
+
+Normally DELETE requests do not send a request body.
+
+------------------------------------------------------------
+WHERE DOES THE DATA COME FROM?
+------------------------------------------------------------
+
+URL Parameters
+
+    /products/5/
+
+↓
+
+pk
+
+Function:
+
+    def get(self, request, pk):
+
+------------------------------------------------------------
+
+Query Parameters
+
+    /products/?category=electronics
+
+↓
+
+request.query_params
+
+------------------------------------------------------------
+
+Request Body
+
+POST / PUT / PATCH
+
+↓
+
+request.data
+
+------------------------------------------------------------
+MENTAL MODEL
+------------------------------------------------------------
+
+Client
+
+    POST /products/
+
+    Body:
+    {
+        "name": "Keyboard",
+        "price": 1200
+    }
+
+            │
+            ▼
+
+Django View
+
+    def post(self, request):
+
+        request.data
+            ↓
+
+        Serializer
+            ↓
+
+        Database
 
 ------------------------------------------------------------
 REAL-LIFE ANALOGY
 ------------------------------------------------------------
 
-URL    → house address
-METHOD → action (deliver / update / delete)
-BODY   → package content
+URL
 
-------------------------------------------------------------
-EXAMPLE FLOW
-------------------------------------------------------------
+→ House address
 
-POST /polls/
+HTTP Method
 
-Body:
-{
-  "question": "New poll?"
-}
+→ What you want to do
+   (deliver, update, remove)
 
-Meaning:
-→ Send data to /polls/ to create a new poll
+Body
+
+→ The package contents
 
 ------------------------------------------------------------
 KEY TAKEAWAY
 ------------------------------------------------------------
 
-- URL identifies the resource
-- HTTP method defines the operation
-- Body carries the data payload
-- Together they form REST API communication
+URL
+→ Identifies WHICH resource.
+
+Method
+→ Defines WHAT action to perform.
+
+Body
+→ Contains the data to send.
+
+Python access:
+
+URL Parameter
+    pk
+
+Query Parameter
+    request.query_params
+    request.GET
+
+Request Body
+    request.data
+
+Together, these form every REST API request.
