@@ -1,0 +1,292 @@
+GIT RESET, RESET MODES & REMOTE SYNC (BEGINNER NOTES)
+
+------------------------------------------------------------
+CORE IDEA
+------------------------------------------------------------
+
+Git stores your project history as commits.
+
+HEAD points to your current commit.
+
+When you use git reset, you move HEAD to another commit.
+
+Different reset modes determine what happens to:
+
+- Commit History
+- Staging Area (Index)
+- Working Directory (Files)
+
+------------------------------------------------------------
+THE THREE AREAS OF GIT
+------------------------------------------------------------
+
+                git add
+
+Working Directory  ------------->  Staging Area  ------------->  Repository
+(Your files)                      (Index)                      (Commits)
+
+        edit files              prepare commit             save history
+
+------------------------------------------------------------
+GIT RESET MODES OVERVIEW
+------------------------------------------------------------
+
+git reset --soft
+git reset --mixed   (DEFAULT)
+git reset --hard
+
+------------------------------------------------------------
+1. git reset --soft
+------------------------------------------------------------
+
+Command:
+  git reset --soft <commit>
+
+Effect:
+  ✔ Moves HEAD
+  ✔ Keeps staged files
+  ✔ Keeps file changes
+
+Example:
+
+Before:
+  A --- B --- C (HEAD)
+
+After:
+  git reset --soft B
+
+Result:
+  A --- B (HEAD)
+
+C changes are STILL STAGED.
+
+Use cases:
+  - Fix commit message
+  - Recommit changes
+  - Combine commits
+
+------------------------------------------------------------
+2. git reset --mixed (DEFAULT)
+------------------------------------------------------------
+
+Command:
+  git reset --mixed <commit>
+  OR
+  git reset <commit>
+
+Effect:
+  ✔ Moves HEAD
+  ✔ Unstages everything
+  ✔ Keeps file changes
+
+Example:
+
+Before:
+  A --- B --- C (HEAD)
+
+After:
+  A --- B (HEAD)
+
+Result in working tree:
+  Files are still edited but NOT staged
+
+Git status:
+  Changes not staged for commit
+
+Use cases:
+  - Edit files before recommitting
+  - Undo commit but keep work
+
+------------------------------------------------------------
+3. git reset --hard
+------------------------------------------------------------
+
+Command:
+  git reset --hard <commit>
+
+Effect:
+  ✔ Moves HEAD
+  ✔ Clears staging area
+  ✔ Deletes ALL local changes
+
+Example:
+
+Before:
+  A --- B --- C --- D (HEAD)
+
+After:
+  git reset --hard B
+
+Result:
+  A --- B (HEAD)
+
+Everything after B is GONE locally.
+
+WARNING:
+  ❌ Deletes uncommitted changes
+  ❌ Deletes staged changes
+  ❌ Deletes local commits
+
+------------------------------------------------------------
+WHAT HAPPENS TO GITHUB?
+------------------------------------------------------------
+
+GitHub is NOT changed automatically.
+
+Example:
+
+Local:
+  A --- B
+
+Remote:
+  A --- B --- C --- D
+
+They are now DIFFERENT.
+
+------------------------------------------------------------
+WHY "SYNC CHANGES" APPEARS
+------------------------------------------------------------
+
+VS Code compares:
+
+Local:
+  A --- B
+
+Remote:
+  A --- B --- C --- D
+
+Git detects mismatch → shows:
+
+  Sync Changes
+
+Meaning:
+  "Your local and remote history differ."
+
+------------------------------------------------------------
+IMPORTANT WARNING
+------------------------------------------------------------
+
+DO NOT DO THIS if you want to keep reset:
+
+  git pull
+  Sync Changes button
+
+Because it may restore commits C and D.
+
+------------------------------------------------------------
+MAKE GITHUB MATCH YOUR RESET
+------------------------------------------------------------
+
+If reset is intentional:
+
+  git push --force origin main
+
+Result:
+
+Remote becomes:
+  A --- B
+
+WARNING:
+  ❌ Rewrites GitHub history
+  ❌ Dangerous on shared branches
+
+------------------------------------------------------------
+SAFETY BACKUP
+------------------------------------------------------------
+
+Before resetting:
+
+  git branch backup-before-reset
+
+Restore anytime:
+
+  git switch backup-before-reset
+
+------------------------------------------------------------
+MENTAL MODEL
+------------------------------------------------------------
+
+Before reset:
+
+HEAD
+ |
+ v
+
+A ---- B ---- C ---- D
+
+After:
+
+git reset --hard B
+
+HEAD moves back:
+
+HEAD
+ |
+ v
+
+A ---- B
+
+Working directory also matches commit B exactly.
+
+------------------------------------------------------------
+WHEN TO USE EACH RESET
+------------------------------------------------------------
+
+--soft
+  → undo commit
+  → keep staged changes
+
+--mixed
+  → undo commit
+  → keep edits (unstaged)
+
+--hard
+  → undo commit
+  → delete everything locally
+
+------------------------------------------------------------
+COMMON COMMANDS
+------------------------------------------------------------
+
+View history:
+  git log --oneline
+
+Undo last commit (keep staged):
+  git reset --soft HEAD~1
+
+Undo commit (keep edits):
+  git reset --mixed HEAD~1
+
+Delete last commit:
+  git reset --hard HEAD~1
+
+Go to commit:
+  git reset --hard <commit_hash>
+
+Force push:
+  git push --force origin main
+
+Backup branch:
+  git branch backup-before-reset
+
+------------------------------------------------------------
+KEY TAKEAWAY
+------------------------------------------------------------
+
+Git reset = LOCAL history rewrite
+
+Soft  → move HEAD only
+Mixed → move HEAD + unstage
+Hard  → move HEAD + delete files
+
+GitHub is NOT affected unless:
+
+  git push --force
+
+------------------------------------------------------------
+FINAL MENTAL MODEL
+------------------------------------------------------------
+
+reset  → changes local history only
+push   → updates remote history
+force  → overwrites remote history
