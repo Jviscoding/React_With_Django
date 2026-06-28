@@ -1,0 +1,275 @@
+==============================================================================
+🔄 Django Reverse Relationship, related_name & Nested Serializers
+==============================================================================
+
+📌 Goal
+
+Return a Task together with all of its related Checklists/SubTasks.
+
+Example JSON:
+
+[
+    {
+        "id": "...",
+        "title": "Shopping",
+        "checklists": [
+            {
+                "id": "...",
+                "text": "Buy Milk"
+            },
+            {
+                "id": "...",
+                "text": "Buy Eggs"
+            }
+        ]
+    }
+]
+
+==============================================================================
+
+📌 Step 1 - Create the ForeignKey with related_name
+
+class SubTaskCheckList(models.Model):
+
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="checklists"
+    )
+
+The related_name creates the reverse relationship.
+
+==============================================================================
+
+➡️ Forward Relationship
+
+SubTaskCheckList ---------> Task
+
+checklist.task
+
+Equivalent SQL:
+
+SELECT *
+FROM Task
+WHERE id = checklist.task_id;
+
+==============================================================================
+
+⬅️ Reverse Relationship
+
+Task ---------> SubTaskCheckList
+
+task.checklists.all()
+
+Equivalent SQL:
+
+SELECT *
+FROM SubTaskCheckList
+WHERE task_id = task.id;
+
+==============================================================================
+
+📌 Step 2 - Create the Child Serializer
+
+class SubTaskSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SubTaskCheckList
+        fields = "__all__"
+
+==============================================================================
+
+📌 Step 3 - Nest the Child Serializer
+
+class TaskSerializer(serializers.ModelSerializer):
+
+    checklists = SubTaskSerializer(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = Task
+        fields = "__all__"
+
+How it works:
+
+checklists
+↑
+Must match the model's related_name.
+
+DRF automatically executes:
+
+task.checklists.all()
+
+for every Task object.
+
+If the serializer field name is different:
+
+class TaskSerializer(serializers.ModelSerializer):
+
+    subtask = SubTaskSerializer(
+        source="checklists",
+        many=True,
+        read_only=True
+    )
+
+"subtask" becomes the JSON field.
+
+"checklists" tells DRF where to retrieve the data.
+
+==============================================================================
+
+📌 Step 4 - Optimize the Query
+
+tasks = (
+    Task.objects
+        .filter(user=user)
+        .prefetch_related("checklists")
+)
+
+The value inside prefetch_related() MUST match the related_name.
+
+✔ Correct
+
+related_name="checklists"
+
+.prefetch_related("checklists")
+
+❌ Incorrect
+
+.prefetch_related("subtask")
+
+==============================================================================
+
+📌 Step 5 - Serialize
+
+serializer = TaskSerializer(tasks, many=True)
+
+return Response(serializer.data)
+
+==============================================================================
+
+📌 What does prefetch_related() actually do?
+
+Without prefetch_related()
+
+SELECT *
+FROM Task
+WHERE user_id = ?;
+
+For every Task:
+
+SELECT *
+FROM SubTaskCheckList
+WHERE task_id = ?;
+
+100 Tasks
+
+↓
+
+1 + 100 Queries
+
+❌ N+1 Query Problem
+
+------------------------------------------------------------------------------
+
+With prefetch_related()
+
+SELECT *
+FROM Task
+WHERE user_id = ?;
+
+SELECT *
+FROM SubTaskCheckList
+WHERE task_id IN (...all task ids...);
+
+Only 2 Queries
+
+✔ Faster
+✔ More Efficient
+
+==============================================================================
+
+📌 Manual Approach
+
+for task in tasks:
+
+    checklists = SubTaskCheckList.objects.filter(task=task)
+
+    ...
+
+Works, but executes many queries.
+
+==============================================================================
+
+📌 Django ORM Approach
+
+tasks = Task.objects.prefetch_related("checklists")
+
+for task in tasks:
+
+    task.checklists.all()
+
+No additional database query because everything is already prefetched.
+
+==============================================================================
+
+📌 Mental Model
+
+ForeignKey
+
+SubTaskCheckList
+        │
+        ▼
+      Task
+
+Reverse Relationship
+
+Task
+        │
+        ▼
+task.checklists.all()
+
+Nested Serializer
+
+TaskSerializer
+        │
+        ▼
+task.checklists.all()
+
+prefetch_related("checklists")
+        │
+        ▼
+Load every checklist in one query.
+
+==============================================================================
+
+💡 Remember
+
+Forward Relationship
+
+checklist.task
+
+Go from Child → Parent
+
+----------------------------------------------------
+
+Reverse Relationship
+
+task.checklists.all()
+
+Go from Parent → All Children
+
+----------------------------------------------------
+
+related_name
+
+Creates the reverse accessor used by:
+
+✔ task.checklists.all()
+✔ prefetch_related("checklists")
+✔ Nested Serializers
+
+Think of related_name as Django's name for traversing
+from the parent model back to all of its related child models.
